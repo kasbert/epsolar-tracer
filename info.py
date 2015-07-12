@@ -26,15 +26,16 @@ print str(response)
 for reg in registers:
     #print
     #print reg
-    value = client.read_input(reg[0])
+    value = client.read_input(reg.name)
     print value
-    #print client.write_output(reg[0],value.value)
+    #if value.value is not None:
+    #    print client.write_output(reg.name,value.value)
 
 for reg in coils:
     #print
     #print reg
-    value = client.read_input(reg[0])
+    value = client.read_input(reg.name)
     print value
-    #print client.write_output(reg[0],value.value)
+    #print client.write_output(reg.name,value.value)
 
 client.close()
