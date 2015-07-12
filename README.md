@@ -16,4 +16,15 @@ Protocol
 
 Python module
 -------------
-Uses modbus library (https://github.com/bashwork/pymodbus)
+Uses modbus library (https://github.com/bashwork/pymodbus)  
+Example output
+```
+# python info.py 
+Manufacturer: 'EPsolar Tech co., Ltd'
+Model: 'Tracer2215BN'
+Version: 'V02.05+V07.12'
+Charging equipment rated input voltage = 150.0V
+Charging equipment rated input voltage = 150.0V
+Charging equipment rated input current = 20.0A
+...
+```
