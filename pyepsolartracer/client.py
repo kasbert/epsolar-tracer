@@ -3,7 +3,7 @@
 # import the server implementation
 from pymodbus.client.sync import ModbusSerialClient as ModbusClient
 from pymodbus.mei_message import *
-from pyepsolartracer.registers import registers,coils
+from pyepsolartracer.registers import registerByName
 
 #---------------------------------------------------------------------------#
 # Logging
@@ -28,7 +28,6 @@ class EPsolarTracerClient:
 
     def connect(self):
         ''' Connect to the serial
-
         :returns: True if connection succeeded, False otherwise
         '''
         return self.client.connect()
@@ -43,6 +42,36 @@ class EPsolarTracerClient:
         response = self.client.execute(request)
         return response
 
+    def read_input(self, name):
+        register = registerByName(name)
+        if register.is_coil():
+            response = self.client.read_coils(register.address, register.size, unit = self.unit)
+        elif register.is_discrete_input():
+            response = self.client.read_discrete_inputs(register.address, register.size, unit = self.unit)
+        elif register.is_input_register():
+            response = self.client.read_input_registers(register.address, register.size, unit = self.unit)
+        else:
+            response = self.client.read_holding_registers(register.address, register.size, unit = self.unit)
+        return register.decode(response)
+
+    def write_output(self, name, value):
+        register = registerByName(name)
+        values = register.encode(value)
+        response = False
+        if register.is_coil():
+            self.client.write_coil(register.address, values, unit = self.unit)
+            response = True
+        elif register.is_discrete_input():
+            _logger.error("Cannot write discrete input " + repr(name))
+            pass
+        elif register.is_input_register():
+            _logger.error("Cannot write input register " + repr(name))
+            pass
+        else:
+            self.client.write_registers(register.address, values, unit = self.unit)
+            response = True
+        return response
+    
 __all__ = [
     "EPsolarTracerClient",
 ]

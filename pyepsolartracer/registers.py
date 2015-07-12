@@ -3,26 +3,80 @@
 # From the PDF
 
 def V():
-    '''Voltage'''
+    return [ 'Voltage', 'V' ]
 def A():
-    '''Ampere'''
+    return [ 'Ampere', 'A' ]
 def AH():
-    '''Ampere hours'''
+    return [ 'Ampere hours', 'Ah' ]
 def W():
-    '''Watt'''
+    return [ 'Watt', 'W' ]
 def C():
-    '''degree Celsius'''
+    return [ 'degree Celsius', '°C' ] # \0xb0
 def PC():
-    '''%, percentage'''
+    return [ '%, percentage', '%' ]
 def KWH():
-    '''kWh, kiloWatt/hour'''
+    return [ 'kWh, kiloWatt/hour', 'kWh' ]
 def Ton():
-    '''1000kg'''
+    return [ '1000kg', 't' ]
 def MO():
-    '''milliohm'''
-def x():
-    '''unknown'''
+    return [ 'milliohm', 'mO' ]
+def I():
+    return [ 'integer', '' ]
+def SEC():
+    return [ 'seconds', 's' ]
+def MIN():
+    return [ 'minutes', 'min' ]
+def HOUR():
+    return [ 'hours', 'h' ]
 
+class Value:
+    '''Value with unit'''
+    def __init__(self, register, value):
+        self.register = register
+        if self.register.times != 1:
+            self.value = 1.0 * value / self.register.times
+        else:
+            self.value = value
+
+    def __str__(self):
+        return self.register.name + " = " + str(self.value) + self.register.unit()[1]
+
+class Register:
+    def __init__(self, values, size = 1):
+        self.name = values[0]
+        self.address = values[1]
+        self.description = values[2]
+        self.unit = values[3]
+        self.times = values[4]
+        self.size = size
+
+    def decode(self, response):
+        if hasattr(response, "getRegister"):
+            return Value(self, response.getRegister(0))
+        #print str(response)
+        return None
+
+    def encode(self,value):
+        return int(value * self.times)
+
+    def is_coil(self):
+        return self.address < 0x1000
+
+    def is_discrete_input(self):
+        return self.address >= 0x1000 and self.address < 0x3000
+
+    def is_input_register(self):
+        return self.address >= 0x3000 and self.address < 0x9000
+
+    def is_holding_register(self):
+        return self.address >= 0x9000
+
+class Coil(Register):
+    def decode(self, response):
+        if hasattr(response, "bits"):
+            return Value(self, response.bits[0])
+        #print str(response)
+        return None
 
 # LS-B Series Protocol
 # ModBus Register Address List
@@ -70,14 +124,14 @@ registers = [
 [ "Charging equipment rated output power",
   0x3006, "Rated charging power to battery",
   W, 100 ],
-# Charging equipment rated output power
-[ "Charging equipment rated output power",
-  0x3007, "Charging equipment rated output power",
+# Charging equipment rated output power 2
+[ "Charging equipment rated output power 2",
+  0x3007, "Charging equipment rated output power 2",
   W, 100 ],
 # Charging mode
 [ "Charging mode",
   0x3008, "0001H-PWM",
-  int, 1 ],
+  I, 1 ],
 # Rated output current of load
 [ "Rated output current of load",
   0x300E, "Rated output current of load",
@@ -116,21 +170,21 @@ registers = [
 [ "Charging equipment output power H",
   0x3107, "Charging equipment output power H",
   W, 100 ],
-# Disharging equipment output voltage
-[ "Disharging equipment output voltage",
+# Discharging equipment output voltage
+[ "Discharging equipment output voltage",
   0x310C, "Load voltage",
   V, 100 ],
-# Disharging equipment output current
-[ "Disharging equipment output current",
+# Discharging equipment output current
+[ "Discharging equipment output current",
   0x310D, "Load current",
   A, 100 ],
-# Disharging equipment output power
-[ "Disharging equipment output power",
+# Discharging equipment output power
+[ "Discharging equipment output power",
   0x310E, "Load power",
   W, 100 ],
-# Disharging equipment output power
-[ "Disharging equipment output power",
-  0x310F, "Disharging equipment output power",
+# Discharging equipment output power 2
+[ "Discharging equipment output power 2",
+  0x310F, "Discharging equipment output power 2",
   W, 100 ],
 # Battery Temperature
 [ "Battery Temperature",
@@ -161,12 +215,12 @@ registers = [
 # Battery statusgister
 [ "Battery status",
   0x3200, "D3-D0: 01H Overvolt , 00H Normal , 02H Under Volt, 03H Low Volt Disconnect, 04H Fault D7-D4: 00H Normal, 01H Over Temp.(Higher than the warning settings), 02H Low Temp.( Lower than the warning settings), D8: Battery inerternal resistance abnormal 1, normal 0 D15: 1-Wrong identification for rated voltage",
-  int, 1 ],
+  I, 1 ],
 # Charging equipment status
 [ "Charging equipment status",
   0x3201,
 "D15-D14: Input volt status. 00 normal, 01 no power connected, 02H Higher volt input, 03H Input volt error. D13: Charging MOSFET is short. D12: Charging or Anti-reverse MOSFET is short. D11: Anti-reverse MOSFET is short. D10: Input is over current. D9: The load is Over current. D8: The load is short. D7: Load MOSFET is short. D4: PV Input is short. D3-2: Charging status. 00 No charging,01 Float,02 Boost,03 Equlization. D1: 0 Normal, 1 Fault. D0: 1 Running, 0 Standby.",
-  int, 1],
+  I, 1],
 
 # Statistical parameter (read only) input register
 
@@ -275,11 +329,11 @@ registers = [
   0x331E, "Ambient Temp.",
   C, 100 ],
 
-# Setting Parameter (read-write) holdin
-# Battery Typeg register
+# Setting Parameter (read-write) holding register
+# Battery Type
 [ "Battery Type",
   0x9000, "0001H- Sealed , 0002H- GEL, 0003H- Flooded, 0000H- User defined",
-  int, 1 ],
+  I, 1 ],
 # Battery Capacity
 [ "Battery Capacity",
   0x9001, "Rated capacity of the battery",
@@ -287,7 +341,7 @@ registers = [
 # Temperature compensation coefficient
 [ "Temperature compensation coefficient",
   0x9002, "Range 0-9 mV/°C/2V",
-  int, 100 ],
+  I, 100 ],
 # High Volt.disconnect
 [ "High Volt.disconnect",
   0x9003, "High Volt.disconnect",
@@ -336,22 +390,22 @@ registers = [
 [ "Discharging limit voltage",
   0x900E, "Discharging limit voltage",
   V, 100 ],
-# Real time clock
-[ "Real time clock",
+# Real time clock 1
+[ "Real time clock 1",
   0x9013, "D7-0 Sec, D15-8 Min.(Year,Month,Day,Min,Sec.should be writed simultaneously)",
-  int, 1 ],
-# Real time clock
-[ "Real time clock",
+  I, 1 ],
+# Real time clock 2
+[ "Real time clock 2",
   0x9014, "D7-0 Hour, D15-8 Day",
-  int, 1 ],
-# Real time clock
-[ "Real time clock",
+  I, 1 ],
+# Real time clock 3
+[ "Real time clock 3",
   0x9015, "D7-0 Month, D15-8 Year",
-  int, 1 ],
+  I, 1 ],
 # Equalization charging cycle
 [ "Equalization charging cycle",
   0x9016, "Interval days of auto equalization charging in cycle Day",
-  int, 1 ],
+  I, 1 ],
 # Battery temperature warning upper limit
 [ "Battery temperature warning upper limit",
   0x9017, "Battery temperature warning upper limit",
@@ -387,7 +441,7 @@ registers = [
 # Light signal startup (night) delay time
 [ "Light signal startup (night) delay time",
   0x901F, "PV voltage lower than NTTV, and duration exceeds the Light signal startup (night) delay time, controller would detect it as night time.",
-  "Min.", 1 ],
+  MIN, 1 ],
 # Day Time Threshold Volt.(DTTV)
 [ "Day Time Threshold Volt.(DTTV)",
   0x9020, "PV voltage higher than this value, controller would detect it as sunrise",
@@ -395,91 +449,91 @@ registers = [
 # Light signal turn off(day) delay time
 [ "Light signal turn off(day) delay time",
   0x9021, "PV voltage higher than DTTV, and duration exceeds Light signal turn off(day) delay time delay time, controller would detect it as daytime.",
-  "Min.", 1 ],
+  MIN, 1 ],
 # Load controling modes
 [ "Load controling modes",
   0x903D,"0000H Manual Control, 0001H Light ON/OFF, 0002H Light ON+ Timer/, 0003H Time Control",
-  int, 1 ],
+  I, 1 ],
 # Working time length 1
 [ "Working time length 1",
   0x903E, "The length of load output timer1, D15-D8,hour, D7-D0, minute",
-  int, 1 ],
+  I, 1 ],
 # Working time length 2
 [ "Working time length 2",
   0x903F, "The length of load output timer2, D15-D8, hour, D7-D0, minute",
-  int, 1 ],
-# Turn on timing 1
-[ "Turn on timing 1",
-  0x9042, "Turn on timing 1",
-  "second", 1],
-# Turn on timing 1
-[ "Turn on timing 1",
-  0x9043, "Turn on timing 1",
-  "minute", 1],
-# Turn on timing 1
-[ "Turn on timing 1",
-  0x9044, "Turn on timing 1",
-  "hour", 1],
-# Turn off timing 1
-[ "Turn off timing 1",
-  0x9045, "Turn off timing 1",
-  "second", 1],
-# Turn off timing 1
-[ "Turn off timing 1",
-  0x9046, "Turn off timing 1",
-  "minute", 1],
-# Turn off timing 1
-[ "Turn off timing 1",
-  0x9047, "Turn off timing 1",
-  "hour", 1 ],
-# Turn on timing 2
-[ "Turn on timing 2",
-  0x9048, "Turn on timing 2",
-  "second", 1 ],
-# Turn on timing 2
-[ "Turn on timing 2",
-  0x9049, "Turn on timing 2",
-  "minute", 1 ],
-# Turn on timing 2
-[ "Turn on timing 2",
-  0x904A, "Turn on timing 2",
-  "hour", 1 ],
-# Turn off timing 2
-[ "Turn off timing 2",
-  0x904B, "Turn off timing 2",
-  "second", 1 ],
-# Turn off timing 2
-[ "Turn off timing 2",
-  0x904C, "Turn off timing 2",
-  "minute", 1 ],
-# Turn off timing 2
-[ "Turn off timing 2",
-  0x904D, "Turn off timing 2",
-  "hour", 1],
+  I, 1 ],
+# Turn on timing 1 sec
+[ "Turn on timing 1 sec",
+  0x9042, "Turn on timing 1 sec",
+  SEC, 1],
+# Turn on timing 1 min
+[ "Turn on timing 1 min",
+  0x9043, "Turn on timing 1 min",
+  MIN, 1],
+# Turn on timing 1 hour
+[ "Turn on timing 1 hour",
+  0x9044, "Turn on timing 1 hour",
+  HOUR, 1],
+# Turn off timing 1 sec
+[ "Turn off timing 1 sec",
+  0x9045, "Turn off timing 1 sec",
+  SEC, 1],
+# Turn off timing 1 min
+[ "Turn off timing 1 min",
+  0x9046, "Turn off timing 1 min",
+  MIN, 1], 
+# Turn off timing  hour
+[ "Turn off timing 1 hour",
+  0x9047, "Turn off timing 1 hour",
+  HOUR, 1 ],
+# Turn on timing 2 sec
+[ "Turn on timing 2 sec",
+  0x9048, "Turn on timing 2 sec",
+  SEC, 1 ],
+# Turn on timing 2 min
+[ "Turn on timing 2 min",
+  0x9049, "Turn on timing 2 min",
+  MIN, 1 ],
+# Turn on timing 2 hour
+[ "Turn on timing 2 hour",
+  0x904A, "Turn on timing 2 hour",
+  HOUR, 1 ],
+# Turn off timing 2 sec
+[ "Turn off timing 2 sec",
+  0x904B, "Turn off timing 2 sec",
+  SEC, 1 ],
+# Turn off timing 2 min
+[ "Turn off timing 2 min",
+  0x904C, "Turn off timing 2 min",
+  MIN, 1 ],
+# Turn off timing 2 hour
+[ "Turn off timing 2 hour",
+  0x904D, "Turn off timing 2 hour",
+  HOUR, 1],
 # Length of night
 [ "Length of night",
   0x9065, "Set default values of the whole night length of time. D15-D8,hour, D7-D0, minute",
-  int, 1 ],
+  I, 1 ],
 # Battery rated voltage code
 [ "Battery rated voltage code",
   0x9067, "0, auto recognize. 1-12V, 2-24V",
-  int, 1 ],
+  I, 1 ],
 # Load timing control selection
 [ "Load timing control selection",
   0x9069, "Selected timeing period of the load.0, using one timer, 1-using two timer, likewise.",
-  int, 1 ],
+  I, 1 ],
 # Default Load On/Off in manual mode
 [ "Default Load On/Off in manual mode",
   0x906A, "0-off, 1-on",
-  int, 1 ],
+  I, 1 ],
 # Equalize duration
 [ "Equalize duration",
   0x906B, "Usually 60-120 minutes.",
-  "minute", 1 ],
+  MIN, 1 ],
 # Boost duration
 [ "Boost duration",
   0x906C, "Usually 60-120 minutes.",
-  "minute", 1 ],
+  MIN, 1 ],
 # Discharging percentage
 [ "Discharging percentage",
   0x906D, "Usually 20%-80%. The percentage of battery's remaining capacity when stop charging",
@@ -492,33 +546,33 @@ registers = [
 # Management modes of battery charging and discharging
 [ "Management modes of battery charging and discharging",
   0x9070, "Management modes of battery charge and discharge, voltage compensation : 0 and SOC : 1.",
-  int, 1 ],
+  I, 1 ],
 ];
 
 coils = [
-#  Coils(read-writ
 # Coils(read-write)
+# Manual control the load
 [ "Manual control the load",
   2,  "When the load is manual mode, 1-manual on, 0 -manual off",
-],
+  I, 1 ],
 # Enable load test mode
 [ "Enable load test mode",
   5, "1 Enable, 0 Disable(normal)",
-],
+  I, 1 ],
 # Force the load on/off
 [ "Force the load on/off",
   6, "1 Turn on, 0 Turn off (used for temporary test of the load)",
-],
+  I, 1 ],
 
 # Discrete input (read-only)
 # Over temperature inside the device
 [ "Over temperature inside the device",
   0x2000, "1 The temperature inside the controller is higher than the over-temperature protection point. 0 Normal",
-],
+  I, 1 ],
 # Day/Night
 [ "Day/Night",
-  0x200C, "1-Night, 0-Day"
-]
+  0x200C, "1-Night, 0-Day",
+  I, 1 ],
 ];
 
 # RJ45 pinout
@@ -533,17 +587,25 @@ coils = [
 # connected devices.
 # (2) User is advised to do not use the pin 1 and pin 2 for the device's safety
 
+_registerByName = {}
+
 for reg in registers:
-    #print reg
-    if len(reg) != 5:
-        raise Exception("internal error")
+    if len(reg) != 5 or _registerByName.has_key(reg[0]):
+        raise Exception("internal error " + reg[0])
+    _registerByName[reg[0]] = Register(reg)
 
 for reg in coils:
-    #print reg
-    if len(reg) != 3:
-        raise Exception("internal error")
+    if len(reg) != 5:
+        raise Exception("internal error " + reg[0])
+    _registerByName[reg[0]] = Coil(reg)
 
+def registerByName(name):
+    if not _registerByName.has_key(name):
+        raise Exception("Unknown register "+repr(name))
+    return _registerByName[name]
+    
 __all__ = [
     "registers",
-    "coils"
+    "coils",
+    "registerByName",
 ]
