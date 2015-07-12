@@ -25,7 +25,7 @@ def KWH():
 def Ton():
     return [ '1000kg', 't' ]
 def MO():
-    return [ 'milliohm', 'mO' ]
+    return [ 'milliohm', 'mOhm' ]
 def I():
     return [ 'integer', '' ]
 def SEC():
@@ -81,7 +81,7 @@ class Register:
                 #print rawvalue
                 rawvalue = -(rawvalue ^ mask) - 1
             return Value(self, rawvalue)
-        _logger.info ("No value for " + repr(name))
+        _logger.info ("No value for register " + repr(self.name))
         return Value(self, None)
 
     def encode(self, value):
@@ -96,7 +96,7 @@ class Coil(Register):
     def decode(self, response):
         if hasattr(response, "bits"):
             return Value(self, response.bits[0])
-        _logger.info ("No value for " + repr(name))
+        _logger.info ("No value for coil " + repr(self.name))
         return Value(self, None)
 
 # LS-B Series Protocol
@@ -148,10 +148,14 @@ Register("Charging equipment rated output current",
 # Charging equipment rated output power
 Register("Charging equipment rated output power",
   0x3006, "Rated charging power to battery",
+  W, 100, 2),
+# Charging equipment rated output power L
+Register("Charging equipment rated output power L",
+  0x3006, "Rated charging power to battery H",
   W, 100 ),
-# Charging equipment rated output power 2
-Register("Charging equipment rated output power 2",
-  0x3007, "Charging equipment rated output power 2",
+# Charging equipment rated output power H
+Register("Charging equipment rated output power H",
+  0x3007, "Charging equipment rated output power H",
   W, 100 ),
 # Charging mode
 Register("Charging mode",
@@ -214,10 +218,14 @@ Register("Discharging equipment output current",
 # Discharging equipment output power
 Register("Discharging equipment output power",
   0x310E, "Load power",
+  W, 100, 2 ),
+# Discharging equipment output power L
+Register("Discharging equipment output power L",
+  0x310E, "Load power L",
   W, 100 ),
-# Discharging equipment output power 2
-Register("Discharging equipment output power 2",
-  0x310F, "Discharging equipment output power 2",
+# Discharging equipment output power H
+Register("Discharging equipment output power H",
+  0x310F, "Discharging equipment output power H",
   W, 100 ),
 # Battery Temperature
 Register("Battery Temperature",
