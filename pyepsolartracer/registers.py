@@ -49,6 +49,12 @@ class Value:
             return self.register.name + " = " + str(self.value) 
         return self.register.name + " = " + str(self.value) + self.register.unit()[1]
 
+    def __float__(self):
+        return float(self.value)
+
+    def __int__(self):
+        return int(self.value)
+
 class Register:
     def __init__(self, name, address, description, unit, times, size = 1):
         self.name = name
