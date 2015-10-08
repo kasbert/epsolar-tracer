@@ -1,6 +1,8 @@
 # epsolar-tracer
 Tools for EPsolar Tracer solar charge controller
 ================================================
+![Top](img/epsolar_tracer_bn.jpg)
+
 [Product link](http://www.epsolarpv.com/en/index.php/Product/pro_content/id/573/am_id/136)  
 [Windows software & nice pictures](http://gwl-power.tumblr.com/tagged/tracer)
 
