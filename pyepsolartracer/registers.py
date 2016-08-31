@@ -248,7 +248,7 @@ Register("Power components temperature",
 # Battery SOC
 Register("Battery SOC",
   0x311A, "The percentage of battery's remaining capacity",
-  PC, 100 ),
+  PC, 1 ),
 # Remote battery temperature
 Register("Remote battery temperature",
   0x311B, "The battery tempeture measured by remote temperature sensor",
@@ -624,11 +624,11 @@ Register("Boost duration",
 # Discharging percentage
 Register("Discharging percentage",
   0x906D, "Usually 20%-80%. The percentage of battery's remaining capacity when stop charging",
-  PC, 100 ),
+  PC, 1 ),
 # Charging percentage
 Register("Charging percentage",
   0x906E, "Depth of charge, 20%-100%.",
-  PC, 100 ),
+  PC, 1 ),
 #906f?
 # Management modes of battery charging and discharging
 Register("Management modes of battery charging and discharging",
