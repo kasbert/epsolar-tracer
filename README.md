@@ -1,5 +1,5 @@
 # epsolar-tracer
-Tools for EPsolar Tracer BN solar charge controller
+Tools for EPsolar Tracer A and BN solar charge controller
 ===================================================
 ![Img](img/epsolar_tracer_bn.jpg)
 
@@ -7,7 +7,9 @@ This is the second generation of the EPsolar Tracer solar charge controller.
 You need RS-485 adapter for communication. The first generation controller 
 used RS-232 and a different protocol. see https://github.com/xxv/tracer.
 
-[Product link](http://www.epsolarpv.com/en/index.php/Product/pro_content/id/573/am_id/136)  
+[Product link 1](http://www.epsolarpv.com/en/index.php/Product/pro_content/id/573/am_id/136)  
+[Product link 2](http://www.epsolarpv.com/en/index.php/Product/index/id/653/am_id/134)  
+
 [Windows software & nice pictures](http://gwl-power.tumblr.com/tagged/tracer)
 
 Linux driver for Exar USB UART
