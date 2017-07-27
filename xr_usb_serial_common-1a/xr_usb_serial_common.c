@@ -31,7 +31,7 @@
  *            Version 1A - Initial released version.
  */
 
-//#undef DEBUG
+#undef DEBUG
 #undef VERBOSE_DEBUG
 
 #include <linux/kernel.h>
