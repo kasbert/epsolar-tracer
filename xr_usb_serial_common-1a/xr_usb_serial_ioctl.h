@@ -16,7 +16,7 @@
 
 #include <linux/ioctl.h>
 
-#define XR_USB_SERIAL_IOC_MAGIC       	'v'
+#define XR_USB_SERIAL_IOC_MAGIC         'v'
 
 #define XR_USB_SERIAL_GET_REG           	_IOWR(XR_USB_SERIAL_IOC_MAGIC, 1, int)
 #define XR_USB_SERIAL_SET_REG           	_IOWR(XR_USB_SERIAL_IOC_MAGIC, 2, int)
@@ -25,7 +25,7 @@
 #define XR_USB_SERIAL_TEST_MODE         	_IO(XR_USB_SERIAL_IOC_MAGIC, 5)
 #define XR_USB_SERIAL_LOOPBACK          	_IO(XR_USB_SERIAL_IOC_MAGIC, 6)
 
-#define VZ_ADDRESS_UNICAST_S        	0
-#define VZ_ADDRESS_BROADCAST_S      	8
+#define VZ_ADDRESS_UNICAST_S            0
+#define VZ_ADDRESS_BROADCAST_S          8
 #define VZ_ADDRESS_MATCH(U, B)          (0x8000000 | ((B) << VZ_ADDRESS_BROADCAST_S) | ((U) << VZ_ADDRESS_UNICAST_S))
-#define VZ_ADDRESS_MATCH_DISABLE    	0
+#define VZ_ADDRESS_MATCH_DISABLE        0
