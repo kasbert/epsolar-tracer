@@ -20,6 +20,8 @@
 #include <linux/usb/cdc.h>
 #include <linux/usb/serial.h>
 
+#include <linux/version.h>
+
 struct xr_txrx_clk_mask {
 	u16 tx;
 	u16 rx0;
@@ -93,6 +95,7 @@ struct xr_txrx_clk_mask {
 #define XR_GPIO_MODE_SEL_DTR_DSR	0x2
 #define XR_GPIO_MODE_SEL_RS485		0x3
 #define XR_GPIO_MODE_SEL_RS485_ADDR	0x4
+#define XR_GPIO_MODE_RS485_TX_H		0x8
 #define XR_GPIO_MODE_TX_TOGGLE		0x100
 #define XR_GPIO_MODE_RX_TOGGLE		0x200
 
@@ -236,6 +239,7 @@ static const struct xr_type xr_types[] = {
 struct xr_data {
 	const struct xr_type *type;
 	u8 channel;			/* zero-based index or interface number */
+	struct serial_rs485 rs485;
 };
 
 static int xr_set_reg(struct usb_serial_port *port, u8 channel, u16 reg, u16 val)
@@ -644,9 +648,13 @@ static void xr_set_flow_mode(struct tty_struct *tty,
 	/* Set GPIO mode for controlling the pins manually by default. */
 	gpio_mode &= ~XR_GPIO_MODE_SEL_MASK;
 
+	if (data->rs485.flags & SER_RS485_ENABLED) {
+		gpio_mode |= XR_GPIO_MODE_SEL_RS485 | XR_GPIO_MODE_RS485_TX_H;
+	} else if (C_CRTSCTS(tty) && C_BAUD(tty) != B0) {
+		gpio_mode |= XR_GPIO_MODE_SEL_RTS_CTS;
+	}
 	if (C_CRTSCTS(tty) && C_BAUD(tty) != B0) {
 		dev_dbg(&port->dev, "Enabling hardware flow ctrl\n");
-		gpio_mode |= XR_GPIO_MODE_SEL_RTS_CTS;
 		flow = XR_UART_FLOW_MODE_HW;
 	} else if (I_IXON(tty)) {
 		u8 start_char = START_CHAR(tty);
@@ -825,6 +833,64 @@ static void xr_set_termios(struct tty_struct *tty,
 	xr_set_flow_mode(tty, port, old_termios);
 }
 
+static int xr_get_rs485_config(struct tty_struct *tty,
+			 unsigned int __user *argp)
+{
+	struct usb_serial_port *port = tty->driver_data;
+	struct xr_data *data = usb_get_serial_port_data(port);
+	unsigned long flags;
+	struct serial_rs485 rs485;
+
+	spin_lock_irqsave(&port->lock, flags);
+	memcpy (&rs485, &data->rs485, sizeof(rs485));
+	spin_unlock_irqrestore(&port->lock, flags);
+	dev_dbg(tty->dev, "%s flags %02x\n", __func__, rs485.flags);
+
+	if (copy_to_user(argp, &rs485, sizeof(rs485)))
+		return -EFAULT;
+
+	return 0;
+}
+
+static int xr_set_rs485_config(struct tty_struct *tty,
+			 unsigned long __user *argp)
+{
+	struct usb_serial_port *port = tty->driver_data;
+	struct xr_data *data = usb_get_serial_port_data(port);
+	struct serial_rs485 rs485;
+	unsigned long flags;
+
+	if (copy_from_user(&rs485, argp, sizeof(rs485)))
+		return -EFAULT;
+
+	dev_dbg(tty->dev, "%s flags %02x\n", __func__, rs485.flags);
+	spin_lock_irqsave(&port->lock, flags);
+	memcpy (&data->rs485, &rs485, sizeof(rs485));
+	xr_set_flow_mode(tty, port, 0);
+	spin_unlock_irqrestore(&port->lock, flags);
+
+	if (copy_to_user(argp, &data->rs485, sizeof(data->rs485)))
+		return -EFAULT;
+
+	return 0;
+}
+
+
+static int xr_ioctl(struct tty_struct *tty,
+					unsigned int cmd, unsigned long arg)
+{
+	void __user *argp = (void __user *)arg;
+	switch (cmd) {
+	case TIOCGRS485:
+		return xr_get_rs485_config(tty, argp);
+
+	case TIOCSRS485:
+		return xr_set_rs485_config(tty, argp);
+	}
+	dev_dbg(tty->dev, "%s unknown cmd 0x%04x\n", __func__, cmd);
+	return -ENOIOCTLCMD;
+}
+
 static int xr_open(struct tty_struct *tty, struct usb_serial_port *port)
 {
 	int ret;
@@ -859,6 +925,22 @@ static void xr_close(struct usb_serial_port *port)
 	xr_uart_disable(port);
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,13,0)
+static int usb_serial_claim_interface(struct usb_serial *serial, struct usb_interface *intf)
+{
+	struct usb_driver *driver = serial->type->usb_driver;
+	int ret;
+
+	ret = usb_driver_claim_interface(driver, intf, serial);
+	if (ret) {
+		dev_err(&serial->interface->dev,
+				"failed to claim sibling interface: %d\n", ret);
+		return ret;
+	}
+	return 0;
+}
+#endif
+
 static int xr_probe(struct usb_serial *serial, const struct usb_device_id *id)
 {
 	struct usb_interface *control = serial->interface;
@@ -879,11 +961,9 @@ static int xr_probe(struct usb_serial *serial, const struct usb_device_id *id)
 	data = usb_ifnum_to_if(serial->dev, desc->bSlaveInterface0);
 	if (!data)
 		return -ENODEV;
-
 	ret = usb_serial_claim_interface(serial, data);
 	if (ret)
 		return ret;
-
 	usb_set_serial_data(serial, (void *)id->driver_info);
 
 	return 0;
@@ -965,11 +1045,16 @@ err_free:
 	return ret;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,13,0)
+static int xr_port_remove(struct usb_serial_port *port)
+#else
 static void xr_port_remove(struct usb_serial_port *port)
+#endif
 {
 	struct xr_data *data = usb_get_serial_port_data(port);
 
 	kfree(data);
+	return 0;
 }
 
 #define XR_DEVICE(vid, pid, type)					\
@@ -1008,6 +1093,7 @@ static struct usb_serial_driver xr_device = {
 	.set_termios		= xr_set_termios,
 	.tiocmget		= xr_tiocmget,
 	.tiocmset		= xr_tiocmset,
+	.ioctl			= xr_ioctl,
 	.dtr_rts		= xr_dtr_rts
 };
 
