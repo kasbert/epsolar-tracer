@@ -633,6 +633,7 @@ static void xr_set_flow_mode(struct tty_struct *tty,
 	struct xr_data *data = usb_get_serial_port_data(port);
 	const struct xr_type *type = data->type;
 	u16 flow, gpio_mode;
+	unsigned long rs485_flags
 	int ret;
 
 	ret = xr_get_reg_uart(port, type->gpio_mode, &gpio_mode);
@@ -649,7 +650,10 @@ static void xr_set_flow_mode(struct tty_struct *tty,
 	/* Set GPIO mode for controlling the pins manually by default. */
 	gpio_mode &= ~XR_GPIO_MODE_SEL_MASK;
 
-	if (data->rs485.flags & SER_RS485_ENABLED) {
+	spin_lock_irqsave(&data->lock, flags);
+	rs485_flags = data->rs485.flags;
+	spin_unlock_irqrestore(&data->lock, flags);
+	if (rs485_flags & SER_RS485_ENABLED) {
 		gpio_mode |= XR_GPIO_MODE_SEL_RS485 | XR_GPIO_MODE_RS485_TX_H;
 	} else if (C_CRTSCTS(tty) && C_BAUD(tty) != B0) {
 		gpio_mode |= XR_GPIO_MODE_SEL_RTS_CTS;
@@ -867,8 +871,8 @@ static int xr_set_rs485_config(struct tty_struct *tty,
 	dev_dbg(tty->dev, "%s flags %02x\n", __func__, rs485.flags);
 	spin_lock_irqsave(&data->lock, flags);
 	memcpy (&data->rs485, &rs485, sizeof(rs485));
-	xr_set_flow_mode(tty, port, 0);
 	spin_unlock_irqrestore(&data->lock, flags);
+	xr_set_flow_mode(tty, port, 0);
 
 	if (copy_to_user(argp, &data->rs485, sizeof(data->rs485)))
 		return -EFAULT;
