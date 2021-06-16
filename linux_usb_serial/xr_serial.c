@@ -240,6 +240,7 @@ struct xr_data {
 	const struct xr_type *type;
 	u8 channel;			/* zero-based index or interface number */
 	struct serial_rs485 rs485;
+	spinlock_t lock;
 };
 
 static int xr_set_reg(struct usb_serial_port *port, u8 channel, u16 reg, u16 val)
@@ -841,9 +842,9 @@ static int xr_get_rs485_config(struct tty_struct *tty,
 	unsigned long flags;
 	struct serial_rs485 rs485;
 
-	spin_lock_irqsave(&port->lock, flags);
+	spin_lock_irqsave(&data->lock, flags);
 	memcpy (&rs485, &data->rs485, sizeof(rs485));
-	spin_unlock_irqrestore(&port->lock, flags);
+	spin_unlock_irqrestore(&data->lock, flags);
 	dev_dbg(tty->dev, "%s flags %02x\n", __func__, rs485.flags);
 
 	if (copy_to_user(argp, &rs485, sizeof(rs485)))
@@ -864,10 +865,10 @@ static int xr_set_rs485_config(struct tty_struct *tty,
 		return -EFAULT;
 
 	dev_dbg(tty->dev, "%s flags %02x\n", __func__, rs485.flags);
-	spin_lock_irqsave(&port->lock, flags);
+	spin_lock_irqsave(&data->lock, flags);
 	memcpy (&data->rs485, &rs485, sizeof(rs485));
 	xr_set_flow_mode(tty, port, 0);
-	spin_unlock_irqrestore(&port->lock, flags);
+	spin_unlock_irqrestore(&data->lock, flags);
 
 	if (copy_to_user(argp, &data->rs485, sizeof(data->rs485)))
 		return -EFAULT;
