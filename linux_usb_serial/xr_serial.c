@@ -633,7 +633,7 @@ static void xr_set_flow_mode(struct tty_struct *tty,
 	struct xr_data *data = usb_get_serial_port_data(port);
 	const struct xr_type *type = data->type;
 	u16 flow, gpio_mode;
-	unsigned long rs485_flags
+	unsigned long flags, rs485_flags;
 	int ret;
 
 	ret = xr_get_reg_uart(port, type->gpio_mode, &gpio_mode);
