@@ -689,7 +689,11 @@ static int xr_usb_serial_tty_write(struct tty_struct *tty,
 	return count;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 14, 0)
+static unsigned int xr_usb_serial_tty_write_room(struct tty_struct *tty) 
+#else
 static int xr_usb_serial_tty_write_room(struct tty_struct *tty)
+#endif
 {
 	struct xr_usb_serial *xr_usb_serial = tty->driver_data;
 	/*
@@ -699,7 +703,11 @@ static int xr_usb_serial_tty_write_room(struct tty_struct *tty)
 	return xr_usb_serial_wb_is_avail(xr_usb_serial) ? xr_usb_serial->writesize : 0;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 14, 0)
+static unsigned int xr_usb_serial_tty_chars_in_buffer(struct tty_struct *tty)
+#else
 static int xr_usb_serial_tty_chars_in_buffer(struct tty_struct *tty)
+#endif
 {
 	struct xr_usb_serial *xr_usb_serial = tty->driver_data;
 	/*
