@@ -1714,9 +1714,15 @@ static const struct tty_operations xr_usb_serial_ops = {
 static int __init xr_usb_serial_init(void)
 {
 	int retval;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0)
+	xr_usb_serial_tty_driver = tty_alloc_driver(XR_USB_SERIAL_TTY_MINORS, 0);
+	if (IS_ERR(xr_usb_serial_tty_driver))
+		return PTR_ERR(xr_usb_serial_tty_driver);
+#else
 	xr_usb_serial_tty_driver = alloc_tty_driver(XR_USB_SERIAL_TTY_MINORS);
 	if (!xr_usb_serial_tty_driver)
 		return -ENOMEM;
+#endif
 	xr_usb_serial_tty_driver->driver_name = "xr_usb_serial",
 	xr_usb_serial_tty_driver->name = "ttyXRUSB",
 	xr_usb_serial_tty_driver->major = XR_USB_SERIAL_TTY_MAJOR,
