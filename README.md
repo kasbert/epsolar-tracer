@@ -10,12 +10,13 @@ used RS-232 and a different protocol. see https://github.com/xxv/tracer.
 [Product link 1](http://www.epsolarpv.com/en/index.php/Product/pro_content/id/573/am_id/136)  
 [Product link 2](http://www.epsolarpv.com/en/index.php/Product/index/id/653/am_id/134)  
 
-[Windows software & nice pictures](http://gwl-power.tumblr.com/tagged/tracer)
+Check [EPEVER site](https://www.epever.com/) for more info and Windows software.
+There are also some [nice pictures](http://gwl-power.tumblr.com/tagged/tracer) on Tumblr.
 
 Linux driver for Exar USB UART
 ------------------------------
-In [directory](xr_usb_serial_common-1a) there is a Linux driver for Exar based USB RS-485 adapter.  
-[Original source](https://www.exar.com/common/content/default.aspx?id=10296)
+In [directory](xr_usb_serial_common-1a) there is a Linux driver for Exar based USB RS-485 adapter. 
+The original source was from Exar website, but it has dissapeared when MaxLinear acquired Exar.
 
 Protocol
 --------
