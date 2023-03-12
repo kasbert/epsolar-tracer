@@ -50,12 +50,12 @@ The other pins are used by MT-50 display and not needed with USB adapter.
 
 | Pin | Function  | Wire  | Eth. T768A  	| Eth. T768B  	|
 |---	|---        |---	  |---	          |---	          |
-| 1  	|     |   	  | White-Green   | White-Orange  |
-| 2  	|     |   	  | Green         | Orange  	    |
+| 1  	| Power     |   	  | White-Green   | White-Orange  |
+| 2  	| Power     |   	  | Green         | Orange  	    |
 | 3  	| RS-485-B  |       | White-Orange  | White-Green   |
 | 4  	| RS-485-B  | D - 	| Blue          | Blue          |
 | 5  	| RS-485-A  |       | White-Blue    | White-Blue    |
 | 6  	| RS-485-A  | D +   | Orange  	    | Green         |
-| 7  	|   	  |   	  | White-Brown   | White-Brown   |
-| 8  	| Ground 	  | GND  	  | Brown	        | Brown	        |
+| 7  	| Ground 	  |   	  | White-Brown   | White-Brown   |
+| 8  	| Ground 	  | GND	  | Brown	        | Brown	        |
 
