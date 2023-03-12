@@ -40,17 +40,20 @@ Charging equipment rated input current = 20.0A
 Wiring
 ------
 Epsolar controller uses RJ45 connector. If you use other RS-485 adapter than Exar, you may create the cable from an Ethernet cable.
-Connect orange wire to adapter pin marked as A or D+ and blue wire to the adapter pin marked as B or D-
+Check the colors from the following tables, your cable is typically T768B or T768A.
+* T768A: Connect orange wire to adapter pin marked as A or D+ and blue wire to the adapter pin marked as B or D- .
+* T768B: Connect green wire to adapter pin marked as A or D+ and blue wire to the adapter pin marked as B or D- .
+
 The other pins are used by MT-50 display and not needed with USB adapter.
 
-| Pin | Function  | Wire  | Eth. Color  	| 
-|---	|---        |---	  |---	          |
-| 1  	| Ground    |   	  | White-Green   |
-| 2  	| Ground    |   	  | Green         |
-| 3  	| RS-485-B  |       | White-Orange  |
-| 4  	| RS-485-B  | D - 	| Blue          |
-| 5  	| RS-485-A  |       | White-Blue    |
-| 6  	| RS-485-A  | D +   | Orange  	    |
-| 7  	| +7.5V  	  |   	  | White-Brown   |
-| 8  	| +7.5V  	  |   	  | Brown	        |
+| Pin | Function  | Wire  | Eth. T768A  	| Eth. T768B  	|
+|---	|---        |---	  |---	          |---	          |
+| 1  	| Ground    |   	  | White-Green   | White-Orange  |
+| 2  	| Ground    |   	  | Green         | Orange  	    |
+| 3  	| RS-485-B  |       | White-Orange  | White-Green   |
+| 4  	| RS-485-B  | D - 	| Blue          | Blue          |
+| 5  	| RS-485-A  |       | White-Blue    | White-Blue    |
+| 6  	| RS-485-A  | D +   | Orange  	    | Green         |
+| 7  	| +7.5V  	  |   	  | White-Brown   | White-Brown   |
+| 8  	| +7.5V  	  |   	  | Brown	        | Brown	        |
 
