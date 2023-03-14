@@ -59,6 +59,5 @@ The other pins are used by MT-50 display and not needed with USB adapter.
 | 7  	| Ground 	  |   	  | White-Brown   | White-Brown   |
 | 8  	| Ground 	  | GND	  | Brown	        | Brown	        |
 
-![Img](img/Ethernet_RJ45_connector_p1160054.jpg)
 <img src="img/Ethernet_RJ45_connector_p1160054.jpg"  width="600">
 
