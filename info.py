@@ -2,19 +2,26 @@
 
 from pyepsolartracer.client import EPsolarTracerClient
 from pyepsolartracer.registers import registers,coils
-from test.testdata import ModbusMockClient as ModbusClient
+from pymodbus.client import ModbusSerialClient as ModbusClient
+#from test.testdata import ModbusMockClient as ModbusClient
+import serial.rs485
 
 # configure the client logging
 import logging
 logging.basicConfig()
 log = logging.getLogger()
 log.setLevel(logging.INFO)
+#log.setLevel(logging.DEBUG)
 
-serialclient = ModbusClient()
-#serialclient = None
+# choose the serial client
+serialclient = ModbusClient(method='rtu', port='/dev/ttyUSB0', baudrate=115200, stopbits = 1, bytesize = 8, timeout=1)
+serialclient.connect()
+try:
+    serialclient.socket.rs485_mode = serial.rs485.RS485Settings()
+except:
+    pass
 
 client = EPsolarTracerClient(serialclient = serialclient)
-client.connect()
 
 response = client.read_device_info()
 print("Manufacturer:", repr(response.information[0]))
