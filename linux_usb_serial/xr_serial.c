@@ -626,7 +626,7 @@ static int xr21v141x_set_baudrate(struct tty_struct *tty, struct usb_serial_port
 	return 0;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(6,0,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,1,0)
 static void xr_set_flow_mode(struct tty_struct *tty,
 		             struct usb_serial_port *port,
 		             struct ktermios *old_termios)
@@ -823,7 +823,7 @@ static void xr_cdc_set_line_coding(struct tty_struct *tty,
 	kfree(lc);
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(6,0,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,1,0)
 static void xr_set_termios(struct tty_struct *tty,
 			   struct usb_serial_port *port,
 			   struct ktermios *old_termios)
