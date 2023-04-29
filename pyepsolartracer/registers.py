@@ -46,7 +46,7 @@ class Value:
 
     def __str__(self):
         if self.value is None:
-            return self.register.name + " = " + str(self.value) 
+            return self.register.name + " = " + str(self.value)
         return self.register.name + " = " + str(self.value) + self.register.unit()[1]
 
     def __float__(self):
@@ -99,7 +99,7 @@ class Register:
         return rawvalue
 
     def __str__(self):
-        return str({ 'address': self.address, 'name': self.name})
+        return str({ 'address': self.address, 'name': self.name, 'size': self.size})
 
 class Coil(Register):
     def decode(self, response):
@@ -695,7 +695,7 @@ def registerByName(name):
     if name not in _registerByName:
         raise Exception("Unknown register "+repr(name))
     return _registerByName[name]
-    
+
 __all__ = [
     "registers",
     "coils",

@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: iso-8859-15 -*-
 
+
+# Read info with ModbusClient
+
 import time
 
 # import the server implementation
@@ -28,34 +31,38 @@ request = ReadDeviceInformationRequest(unit=1)
 response = client.execute(request)
 
 if hasattr(response, 'information'):
-    print (repr(response.information))
+    print ('ReadDeviceInformationRequest', repr(response.information))
 else:
-    print (repr(response))
+    print ('ReadDeviceInformationRequest', repr(response))
+
+unit = 1
 
 for reg in registers:
     print()
-    print(reg)
-    rr = client.read_input_registers(reg.address, 1, slave=1)
-    if hasattr(rr, "getRegister"):
+    print(reg, reg.is_input_register(), reg.is_holding_register())
+    if reg.is_input_register():
+        rr = client.read_input_registers(address=reg.address, count=reg.size, slave = unit)
         print("read_input_registers:", rr.getRegister(0))
     else:
-        print("read_input_registers", str(rr))
-    rr = client.read_holding_registers(reg.address, 1, slave=1)
-    if hasattr(rr, "getRegister"):
+        rr = client.read_holding_registers(address=reg.address, count=reg.size, slave = unit)
         print("read_holding_registers:", rr.getRegister(0))
-    else:
-        print("read_holding_registers:", str(rr))
+    value = reg.decode(rr)
+    print (rr, value)
 
 for reg in coils:
     print()
-    print(reg)
-    rr =client.read_coils(reg.address, slave=1)
-    if hasattr(rr, "bits"):
-        print("read_coils:", str(rr.bits))
-    else:
-        print("read_coils:", str(rr))
-    rr = client.read_discrete_inputs(reg.address, slave=1)
-    if hasattr(rr, "bits"):
-        print("read_discrete_inputs:", str(rr.bits))
-    else:
-        print("read_discrete_inputs:", str(rr))
+    print(reg, reg.is_coil(), reg.is_discrete_input())
+    if reg.is_coil():
+        rr = client.read_coils(address = reg.address, count = reg.size, slave = unit)
+        if hasattr(rr, "bits"):
+            print("read_coils:", str(rr.bits))
+        else:
+            print("read_coils:", str(rr))
+    elif reg.is_discrete_input():
+        rr = client.read_discrete_inputs(address = reg.address, count = reg.size, slave = unit)
+        if hasattr(rr, "bits"):
+            print("read_discrete_inputs:", str(rr.bits))
+        else:
+            print("read_discrete_inputs:", str(rr))
+    value = reg.decode(rr)
+    print (rr, value)
