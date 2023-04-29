@@ -37,6 +37,28 @@ else:
 
 unit = 1
 
+# Read multiple registers at once
+chunks = []
+last = 0x3000 - 1
+chunk = []
+for reg in registers:
+    if reg.address != last + 1:
+        chunks.append(chunk)
+        chunk = []
+    chunk.append(reg)
+    last = reg.address
+for chunk in chunks:
+    reg = chunk[0]
+    count = len(chunk) # FIXME multiword registers
+    if reg.is_input_register():
+        rr = client.read_input_registers(address=reg.address, count=count, slave = unit)
+    else:
+        rr = client.read_holding_registers(address=reg.address, count=count, slave = unit)
+    print("read_input_registers:", ("0x%04x" % reg.address), count, end = ' : ')
+    for i in range(count):
+        print (rr.getRegister(i), end = ', ')
+    print ('')
+
 for reg in registers:
     print()
     print(reg, reg.is_input_register(), reg.is_holding_register())
