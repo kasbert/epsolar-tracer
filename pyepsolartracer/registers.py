@@ -2,9 +2,7 @@
 #
 # From the PDF
 
-#---------------------------------------------------------------------------#
-# Logging
-#---------------------------------------------------------------------------#
+from struct import pack
 import logging
 _logger = logging.getLogger(__name__)
 
@@ -34,6 +32,8 @@ def MIN():
     return [ 'minutes', 'min' ]
 def HOUR():
     return [ 'hours', 'h' ]
+def WORDS():
+    return [ 'words', 'w' ]
 
 class Value:
     '''Value with unit'''
@@ -76,30 +76,45 @@ class Register:
     def is_holding_register(self):
         return self.address >= 0x9000
 
-    def decode(self, response):
-        if hasattr(response, "getRegister"):
-            mask = rawvalue = lastvalue = 0
-            for i in range(self.size):
-                lastvalue = response.getRegister(i)
-                rawvalue = rawvalue | (lastvalue << (i * 16))
-                mask = (mask << 16) | 0xffff
-            if (lastvalue & 0x8000) == 0x8000:
-                #print rawvalue
-                rawvalue = -(rawvalue ^ mask) - 1
-            return Value(self, rawvalue)
-        _logger.info ("No value for register " + repr(self.name))
-        return Value(self, None)
-
-    def encode(self, value):
-        # FIXME handle 2 word registers
-        rawvalue = int(value * self.times)
-        if rawvalue < 0:
-            rawvalue = (-rawvalue - 1) ^ 0xffff
+    def rawvalue(self, response):
+        if not hasattr(response, "getRegister"):
+            _logger.info ("No value for register " + repr(self.name))
+            print (self)
+            print (Coil.decode(self, response))
+            raise "prkl"
+            return None
+        mask = rawvalue = lastvalue = 0
+        for i in range(self.size):
+            lastvalue = response.getRegister(i)
+            rawvalue = rawvalue | (lastvalue << (i * 16))
+            mask = (mask << 16) | 0xffff
+        if (lastvalue & 0x8000) == 0x8000:
             #print rawvalue
+            rawvalue = -(rawvalue ^ mask) - 1
         return rawvalue
 
+    def decode(self, response):
+        return Value(self, self.rawvalue(response))
+
+    def encode(self, value):
+        if self.size == 1:
+          rawvalue = int(value * self.times)
+          if rawvalue < 0:
+              rawvalue = (-rawvalue - 1) ^ 0xffff
+              #print rawvalue
+          return rawvalue
+        values = []
+        for i in range(self.size):
+          values.append(value & 0xffff)
+          value = value >> 16
+        return values
+
     def __str__(self):
-        return str({ 'address': self.address, 'name': self.name, 'size': self.size})
+        return str({ 'address': ("0x%x" % self.address), 'name': self.name, 'size': self.size})
+
+class Setting(Register):
+    def __str__(self):
+        return str({ 'address': ("0x%x" % self.address), 'name': self.name, 'size': self.size})
 
 class Coil(Register):
     def decode(self, response):
@@ -421,220 +436,224 @@ Register("Ambient Temp.",
 
 # Setting Parameter (read-write) holding register
 # Battery Type
-Register("Battery Type",
+Setting("Battery Type",
   0x9000, "0001H- Sealed , 0002H- GEL, 0003H- Flooded, 0000H- User defined",
   I, 1 ),
 # Battery Capacity
-Register("Battery Capacity",
+Setting("Battery Capacity",
   0x9001, "Rated capacity of the battery",
   AH, 1 ),
 # Temperature compensation coefficient
-Register("Temperature compensation coefficient",
+Setting("Temperature compensation coefficient",
   0x9002, "Range 0-9 mV/�C/2V",
   I, 100 ),
 # High Volt.disconnect
-Register("High Volt.disconnect",
+Setting("High Volt.disconnect",
   0x9003, "High Volt.disconnect",
   V, 100 ),
 # Charging limit voltage
-Register("Charging limit voltage",
+Setting("Charging limit voltage",
   0x9004, "Charging limit voltage",
   V, 100 ),
 # Over voltage reconnect
-Register("Over voltage reconnect",
+Setting("Over voltage reconnect",
   0x9005, "Over voltage reconnect",
   V, 100 ),
 # Equalization voltage
-Register("Equalization voltage",
+Setting("Equalization voltage",
   0x9006, "Equalization voltage",
   V, 100 ),
 # Boost voltage
-Register("Boost voltage",
+Setting("Boost voltage",
   0x9007, "Boost voltage",
   V, 100 ),
 # Float voltage
-Register("Float voltage",
+Setting("Float voltage",
   0x9008, "Float voltage",
   V, 100 ),
 # Boost reconnect voltage
-Register("Boost reconnect voltage",
+Setting("Boost reconnect voltage",
   0x9009, "Boost reconnect voltage",
   V, 100 ),
 # Low voltage reconnect
-Register("Low voltage reconnect",
+Setting("Low voltage reconnect",
   0x900A, "Low voltage reconnect",
   V, 100 ),
 # Under voltage recover
-Register("Under voltage recover",
+Setting("Under voltage recover",
   0x900B, "Under voltage recover",
   V, 100 ),
 # Under voltage warning
-Register("Under voltage warning",
+Setting("Under voltage warning",
   0x900C, "Under voltage warning",
   V, 100 ),
 # Low voltage disconnect
-Register("Low voltage disconnect",
+Setting("Low voltage disconnect",
   0x900D, "Low voltage disconnect",
   V, 100 ),
 # Discharging limit voltage
-Register("Discharging limit voltage",
+Setting("Discharging limit voltage",
   0x900E, "Discharging limit voltage",
   V, 100 ),
+# Real time clock
+Setting("Real time clock",
+  0x9013, "D7-0 Sec, D15-8 Min. D23-16 Hour, D31-24 Day D39-32 Month, D49-40 Year",
+  WORDS, 1, 3),
 # Real time clock 1
-Register("Real time clock 1",
+Setting("Real time clock 1",
   0x9013, "D7-0 Sec, D15-8 Min.(Year,Month,Day,Min,Sec.should be writed simultaneously)",
   I, 1 ),
 # Real time clock 2
-Register("Real time clock 2",
+Setting("Real time clock 2",
   0x9014, "D7-0 Hour, D15-8 Day",
   I, 1 ),
 # Real time clock 3
-Register("Real time clock 3",
+Setting("Real time clock 3",
   0x9015, "D7-0 Month, D15-8 Year",
   I, 1 ),
 # Equalization charging cycle
-Register("Equalization charging cycle",
+Setting("Equalization charging cycle",
   0x9016, "Interval days of auto equalization charging in cycle Day",
   I, 1 ),
 # Battery temperature warning upper limit
-Register("Battery temperature warning upper limit",
+Setting("Battery temperature warning upper limit",
   0x9017, "Battery temperature warning upper limit",
   C, 100 ),
 # Battery temperature warning lower limit
-Register("Battery temperature warning lower limit",
+Setting("Battery temperature warning lower limit",
   0x9018, "Battery temperature warning lower limit",
   C, 100 ),
 # Controller inner temperature upper limit
-Register("Controller inner temperature upper limit",
+Setting("Controller inner temperature upper limit",
   0x9019, "Controller inner temperature upper limit",
   C, 100 ),
 # Controller inner temperature upper limit recover
-Register("Controller inner temperature upper limit recover",
+Setting("Controller inner temperature upper limit recover",
   0x901A, "After Over Temperature, system recover once it drop to lower than this value",
   C, 100 ),
 # Power component temperature upper limit
-Register("Power component temperature upper limit",
+Setting("Power component temperature upper limit",
   0x901B, "Warning when surface temperature of power components higher than this value, and charging and discharging stop",
   C, 100 ),
 # Power component temperature upper limit recover
-Register("Power component temperature upper limit recover",
+Setting("Power component temperature upper limit recover",
   0x901C, "Recover once power components temperature lower than this value",
   C, 100 ),
 # Line Impedance
-Register("Line Impedance",
+Setting("Line Impedance",
   0x901D, "The resistance of the connectted wires.",
   MO, 100 ),
 # Night TimeThreshold Volt.(NTTV)
-Register("Night TimeThreshold Volt.(NTTV)",
+Setting("Night TimeThreshold Volt.(NTTV)",
   0x901E, " PV lower lower than this value, controller would detect it as sundown",
   V, 100 ),
 # Light signal startup (night) delay time
-Register("Light signal startup (night) delay time",
+Setting("Light signal startup (night) delay time",
   0x901F, "PV voltage lower than NTTV, and duration exceeds the Light signal startup (night) delay time, controller would detect it as night time.",
   MIN, 1 ),
 # Day Time Threshold Volt.(DTTV)
-Register("Day Time Threshold Volt.(DTTV)",
+Setting("Day Time Threshold Volt.(DTTV)",
   0x9020, "PV voltage higher than this value, controller would detect it as sunrise",
   V, 100 ),
 # Light signal turn off(day) delay time
-Register("Light signal turn off(day) delay time",
+Setting("Light signal turn off(day) delay time",
   0x9021, "PV voltage higher than DTTV, and duration exceeds Light signal turn off(day) delay time delay time, controller would detect it as daytime.",
   MIN, 1 ),
 # Load controling modes
-Register("Load controling modes",
+Setting("Load controling modes",
   0x903D,"0000H Manual Control, 0001H Light ON/OFF, 0002H Light ON+ Timer/, 0003H Time Control",
   I, 1 ),
 # Working time length 1
-Register("Working time length 1",
+Setting("Working time length 1",
   0x903E, "The length of load output timer1, D15-D8,hour, D7-D0, minute",
   I, 1 ),
 # Working time length 2
-Register("Working time length 2",
+Setting("Working time length 2",
   0x903F, "The length of load output timer2, D15-D8, hour, D7-D0, minute",
   I, 1 ),
 # Turn on timing 1 sec
-Register("Turn on timing 1 sec",
+Setting("Turn on timing 1 sec",
   0x9042, "Turn on timing 1 sec",
   SEC, 1),
 # Turn on timing 1 min
-Register("Turn on timing 1 min",
+Setting("Turn on timing 1 min",
   0x9043, "Turn on timing 1 min",
   MIN, 1),
 # Turn on timing 1 hour
-Register("Turn on timing 1 hour",
+Setting("Turn on timing 1 hour",
   0x9044, "Turn on timing 1 hour",
   HOUR, 1),
 # Turn off timing 1 sec
-Register("Turn off timing 1 sec",
+Setting("Turn off timing 1 sec",
   0x9045, "Turn off timing 1 sec",
   SEC, 1),
 # Turn off timing 1 min
-Register("Turn off timing 1 min",
+Setting("Turn off timing 1 min",
   0x9046, "Turn off timing 1 min",
   MIN, 1 ),
 # Turn off timing  hour
-Register("Turn off timing 1 hour",
+Setting("Turn off timing 1 hour",
   0x9047, "Turn off timing 1 hour",
   HOUR, 1 ),
 # Turn on timing 2 sec
-Register("Turn on timing 2 sec",
+Setting("Turn on timing 2 sec",
   0x9048, "Turn on timing 2 sec",
   SEC, 1 ),
 # Turn on timing 2 min
-Register("Turn on timing 2 min",
+Setting("Turn on timing 2 min",
   0x9049, "Turn on timing 2 min",
   MIN, 1 ),
 # Turn on timing 2 hour
-Register("Turn on timing 2 hour",
+Setting("Turn on timing 2 hour",
   0x904A, "Turn on timing 2 hour",
   HOUR, 1 ),
 # Turn off timing 2 sec
-Register("Turn off timing 2 sec",
+Setting("Turn off timing 2 sec",
   0x904B, "Turn off timing 2 sec",
   SEC, 1 ),
 # Turn off timing 2 min
-Register("Turn off timing 2 min",
+Setting("Turn off timing 2 min",
   0x904C, "Turn off timing 2 min",
   MIN, 1 ),
 # Turn off timing 2 hour
-Register("Turn off timing 2 hour",
+Setting("Turn off timing 2 hour",
   0x904D, "Turn off timing 2 hour",
   HOUR, 1),
 # Length of night
-Register("Length of night",
+Setting("Length of night",
   0x9065, "Set default values of the whole night length of time. D15-D8,hour, D7-D0, minute",
   I, 1 ),
 # Battery rated voltage code
-Register("Battery rated voltage code",
+Setting("Battery rated voltage code",
   0x9067, "0, auto recognize. 1-12V, 2-24V",
   I, 1 ),
 # Load timing control selection
-Register("Load timing control selection",
+Setting("Load timing control selection",
   0x9069, "Selected timeing period of the load.0, using one timer, 1-using two timer, likewise.",
   I, 1 ),
 # Default Load On/Off in manual mode
-Register("Default Load On/Off in manual mode",
+Setting("Default Load On/Off in manual mode",
   0x906A, "0-off, 1-on",
   I, 1 ),
 # Equalize duration
-Register("Equalize duration",
+Setting("Equalize duration",
   0x906B, "Usually 60-120 minutes.",
   MIN, 1 ),
 # Boost duration
-Register("Boost duration",
+Setting("Boost duration",
   0x906C, "Usually 60-120 minutes.",
   MIN, 1 ),
 # Discharging percentage
-Register("Discharging percentage",
+Setting("Discharging percentage",
   0x906D, "Usually 20%-80%. The percentage of battery's remaining capacity when stop charging",
   PC, 1 ),
 # Charging percentage
-Register("Charging percentage",
+Setting("Charging percentage",
   0x906E, "Depth of charge, 20%-100%.",
   PC, 1 ),
 #906f?
 # Management modes of battery charging and discharging
-Register("Management modes of battery charging and discharging",
+Setting("Management modes of battery charging and discharging",
   0x9070, "Management modes of battery charge and discharge, voltage compensation : 0 and SOC : 1.",
   I, 1 ),
 ];
