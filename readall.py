@@ -23,7 +23,7 @@ log.setLevel(logging.INFO)
 client = ModbusClient(method='rtu', port='/dev/ttyUSB0', baudrate=115200, stopbits = 1, bytesize = 8, timeout=1)
 client.connect()
 try:
-    client.socket.rs485_mode = serial.rs485.RS485Settings()
+    client.socket.rs485_mode = serial.rs485.RS485Settings(rts_level_for_rx=True,rts_level_for_tx=False)
 except:
     pass
 
