@@ -643,8 +643,13 @@ static void xr_usb_serial_tty_close(struct tty_struct *tty, struct file *filp)
 	tty_port_close(&xr_usb_serial->port, tty, filp);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 2, 0)
+static ssize_t xr_usb_serial_tty_write(struct tty_struct *tty,
+					const unsigned char *buf, size_t count)
+#else
 static int xr_usb_serial_tty_write(struct tty_struct *tty,
 					const unsigned char *buf, int count)
+#endif
 {
 	struct xr_usb_serial *xr_usb_serial = tty->driver_data;
 	int stat;
@@ -655,7 +660,11 @@ static int xr_usb_serial_tty_write(struct tty_struct *tty,
 	if (!count)
 		return 0;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 2, 0)
+	dev_vdbg(&xr_usb_serial->data->dev, "%s - count %ld\n", __func__, count);
+#else
 	dev_vdbg(&xr_usb_serial->data->dev, "%s - count %d\n", __func__, count);
+#endif
 
 	spin_lock_irqsave(&xr_usb_serial->write_lock, flags);
 	wbn = xr_usb_serial_wb_alloc(xr_usb_serial);
@@ -672,7 +681,11 @@ static int xr_usb_serial_tty_write(struct tty_struct *tty,
 	}
 
 	count = (count > xr_usb_serial->writesize) ? xr_usb_serial->writesize : count;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 2, 0)
+	dev_vdbg(&xr_usb_serial->data->dev, "%s - write %ld\n", __func__, count);
+#else
 	dev_vdbg(&xr_usb_serial->data->dev, "%s - write %d\n", __func__, count);
+#endif
 	memcpy(wb->buf, buf, count);
 	wb->len = count;
 
