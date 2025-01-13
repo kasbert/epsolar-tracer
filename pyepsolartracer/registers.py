@@ -15,7 +15,7 @@ def AH():
 def W():
     return [ 'Watt', 'W' ]
 def C():
-    return [ 'degree Celsius', '�C' ] # \0xb0
+    return [ 'degree Celsius', '\u00b0C' ] # \0xb0
 def PC():
     return [ '%, percentage', '%' ]
 def KWH():
