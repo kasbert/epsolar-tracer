@@ -15,7 +15,20 @@ There are also some [nice pictures](http://gwl-power.tumblr.com/tagged/tracer) o
 
 Linux driver for Exar USB UART
 ------------------------------
-In [directory](xr_usb_serial_common-1a) there is a Linux driver for Exar based USB RS-485 adapter. 
+NOTE If you have Linux kernel version 6.5 or newer, you don't need any special driver.
+For example in Raspbian/bookworm:
+```
+kasper@zombie:~ $ uname -r
+6.6.62+rpt-rpi-v8
+kasper@zombie:~ $ lsmod | grep serial
+xr_serial              16384  0
+usbserial              40960  1 xr_serial
+kasper@zombie:~ $ ls -l /dev/ttyUSB*
+crw-rw---- 1 root dialout 188, 0 Jan 13 05:59 /dev/ttyUSB0
+```
+
+If you cannot use a new kernel, you may try this Linux driver in
+[directory](xr_usb_serial_common-1a). That is for for Exar based USB RS-485 adapter. 
 The original source was from Exar website, but it has dissapeared when MaxLinear acquired Exar.
 
 Protocol
